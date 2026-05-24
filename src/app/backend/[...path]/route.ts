@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'https://dailyflow-backend-kwuc.onrender.com';
+const BACKEND_URL = 'https://dailyflow-backend-dqou.onrender.com';
 
 async function handler(req: NextRequest) {
   const path = req.nextUrl.pathname.replace('/backend', '/api');
@@ -11,7 +11,9 @@ async function handler(req: NextRequest) {
     'Content-Type': 'application/json',
   };
 
-  // Forward cookies
+  const authHeader = req.headers.get('authorization');
+  if (authHeader) headers['Authorization'] = authHeader;
+
   const cookie = req.headers.get('cookie');
   if (cookie) headers['Cookie'] = cookie;
 
@@ -31,16 +33,11 @@ async function handler(req: NextRequest) {
 
     const res = new NextResponse(data, {
       status: response.status,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    // Forward set-cookie headers
     const setCookie = response.headers.get('set-cookie');
-    if (setCookie) {
-      res.headers.set('set-cookie', setCookie);
-    }
+    if (setCookie) res.headers.set('set-cookie', setCookie);
 
     return res;
   } catch (error) {

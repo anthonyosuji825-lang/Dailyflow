@@ -145,7 +145,7 @@ export default function LoginPage() {
 
       <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 960 }}>
         {/* Card */}
-        <div style={{
+        <div className="auth-card" style={{
           background: 'rgba(255,255,255,0.97)',
           backdropFilter: 'blur(20px)',
           borderRadius: 24, overflow: 'hidden',
@@ -221,7 +221,7 @@ export default function LoginPage() {
           </div>
 
           {/* RIGHT PANEL */}
-          <div style={{
+          <div className="auth-right-panel" style={{
             padding: '40px 32px',
             display: 'flex', flexDirection: 'column',
             justifyContent: 'center', background: 'white',
@@ -428,6 +428,8 @@ export default function LoginPage() {
         @media (max-width: 640px) {
           .hide-mobile { display: none !important; }
           .show-mobile-only { display: flex !important; }
+          .auth-card { grid-template-columns: 1fr !important; }
+          .auth-right-panel { padding: 28px 20px !important; }
         }
         @media (min-width: 641px) {
           .show-mobile-only { display: none !important; }

@@ -15,7 +15,7 @@ export interface User {
 
 // ===== AUTH =====
 export interface LoginCredentials {
-  usernameOrEmail: string;
+  usernameOrEmail: string; // frontend uses this, auth.ts converts to email
   password: string;
 }
 
