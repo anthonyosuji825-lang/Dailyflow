@@ -2,6 +2,98 @@
 
 import { useState, useEffect } from 'react';
 import { useTheme } from '@/lib/theme';
+import { loadData } from '@/lib/store';
+
+function HeatMap({ isDark }: { isDark: boolean }) {
+  const data = loadData();
+  const today = new Date();
+  const weeks = 26;
+  const days = weeks * 7;
+
+  const cells = Array.from({ length: days }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (days - 1 - i));
+    const dateStr = date.toISOString().split('T')[0];
+    const dayData = data.calendar[dateStr];
+    const habitsDone = data.habits.filter(h => h.completedDates.includes(dateStr)).length;
+    return { dateStr, habitsDone, dayData };
+  });
+
+  const getColor = (count: number) => {
+    if (count === 0) return isDark ? '#1e293b' : '#f3f4f6';
+    if (count === 1) return '#818cf8';
+    if (count === 2) return '#6366f1';
+    if (count === 3) return '#4f46e5';
+    return '#3730a3';
+  };
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthLabels: { label: string; col: number }[] = [];
+  let lastMonth = -1;
+  cells.forEach((cell, i) => {
+    const month = new Date(cell.dateStr).getMonth();
+    const col = Math.floor(i / 7);
+    if (month !== lastMonth) {
+      monthLabels.push({ label: months[month], col });
+      lastMonth = month;
+    }
+  });
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <div style={{ position: 'relative', paddingTop: 20 }}>
+        {/* Month labels */}
+        <div style={{ display: 'flex', position: 'absolute', top: 0, left: 0 }}>
+          {monthLabels.map((m, i) => (
+            <div key={i} style={{
+              position: 'absolute', left: m.col * 14,
+              fontSize: 10, color: isDark ? '#64748b' : '#9ca3af', fontWeight: 500,
+            }}>
+              {m.label}
+            </div>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div style={{ display: 'flex', gap: 2 }}>
+          {Array.from({ length: weeks }, (_, w) => (
+            <div key={w} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {Array.from({ length: 7 }, (_, d) => {
+                const cell = cells[w * 7 + d];
+                if (!cell) return <div key={d} style={{ width: 12, height: 12 }} />;
+                return (
+                  <div key={d}
+                    title={`${cell.dateStr}: ${cell.habitsDone} habits`}
+                    style={{
+                      width: 12, height: 12, borderRadius: 3,
+                      background: getColor(cell.habitsDone),
+                      cursor: 'pointer', transition: 'opacity 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.opacity = '0.8'}
+                    onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.opacity = '1'}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
+        <span style={{ fontSize: 11, color: isDark ? '#64748b' : '#9ca3af' }}>Less</span>
+        {[0, 1, 2, 3, 4].map(i => (
+          <div key={i} style={{
+            width: 12, height: 12, borderRadius: 3,
+            background: getColor(i),
+            border: `1px solid ${isDark ? '#334155' : '#e5e7eb'}`,
+          }} />
+        ))}
+        <span style={{ fontSize: 11, color: isDark ? '#64748b' : '#9ca3af' }}>More</span>
+      </div>
+    </div>
+  );
+}
 
 type Tab = 'overview' | 'habits' | 'goals' | 'projects';
 
@@ -286,7 +378,21 @@ export default function StatsPage() {
         </div>
       )}
 
-      {activeTab !== 'overview' && (
+      {activeTab === 'habits' && (
+        <div style={{
+          background: isDark ? '#1e293b' : 'white', borderRadius: 12,
+          padding: isMobile ? '16px' : '24px',
+          border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
+          marginBottom: 16,
+        }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#f1f5f9' : '#111827', margin: '0 0 16px' }}>
+            Habit Activity Heatmap
+          </h3>
+          <HeatMap isDark={isDark} />
+        </div>
+      )}
+
+      {activeTab !== 'overview' && activeTab !== 'habits' && (
         <div style={{
           background: isDark ? '#1e293b' : 'white', borderRadius: 12,
           padding: '60px 20px', border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,

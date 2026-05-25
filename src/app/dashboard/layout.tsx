@@ -7,6 +7,7 @@ import { useTheme } from '@/lib/theme';
 import Sidebar from '@/components/dashboard/Sidebar';
 import MobileNav from '@/components/dashboard/MobileNav';
 import Header from '@/components/dashboard/Header';
+import PomodoroTimer from '@/components/dashboard/PomodoroTimer';
 
 export default function DashboardLayout({
   children,
@@ -63,6 +64,7 @@ export default function DashboardLayout({
         </main>
       </div>
       {isMobile && <MobileNav />}
+      <PomodoroTimer />
     </div>
   );
 }

@@ -53,6 +53,19 @@ const navItems = [
       </svg>
     ),
   },
+
+{
+    href: '/dashboard/badges',
+    label: 'Badges',
+    icon: (active: boolean) => (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke={active ? '#6366f1' : '#9ca3af'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="8" r="6"/>
+        <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+      </svg>
+    ),
+  },
+  
   {
     href: '/dashboard/profile',
     label: 'Profile',
