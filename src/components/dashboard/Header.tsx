@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/context';
+import { useTheme } from '@/lib/theme';
 import { loadData } from '@/lib/store';
 
 const pageMeta: Record<string, string> = {
@@ -27,6 +28,7 @@ export default function Header({ isMobile }: { isMobile?: boolean }) {
   const router = useRouter();
   const { user } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
+  const { isDark, toggleTheme } = useTheme();
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -504,6 +506,18 @@ export default function Header({ isMobile }: { isMobile?: boolean }) {
               </div>
             )}
           </div>
+
+          {/* Theme toggle */}
+          <button onClick={toggleTheme}
+            style={{
+              width: 36, height: 36, borderRadius: 8,
+              background: isDark ? '#1e293b' : '#f9fafb',
+              border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', fontSize: 16,
+            }}>
+            {isDark ? '☀️' : '🌙'}
+          </button>
 
           <div style={{
             width: 1, height: 20, background: '#f3f4f6', margin: '0 2px',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/lib/theme';
 import { loadData, saveData } from '@/lib/store';
 
 type Priority = 'high' | 'medium' | 'low';
@@ -51,6 +52,7 @@ const emptyGoal = {
 };
 
 export default function GoalsPage() {
+  const { isDark } = useTheme();
   const [goals, setGoals] = useState<Goal[]>(() => loadData().goals);
   const [showModal, setShowModal] = useState(false);
   useEffect(() => {
@@ -131,7 +133,7 @@ export default function GoalsPage() {
     borderRadius: 10,
     border: '1px solid #e5e7eb',
     fontSize: 14,
-    color: '#111827',
+    color: isDark ? '#f1f5f9' : '#111827',
     background: '#f9fafb',
     outline: 'none',
     boxSizing: 'border-box' as const,
@@ -161,14 +163,14 @@ export default function GoalsPage() {
           { label: 'Avg Progress', value: `${stats.avgProgress}%`, color: '#8b5cf6' },
         ].map(s => (
           <div key={s.label} style={{
-            background: 'white', borderRadius: 12, padding: '16px 20px',
-            border: '1px solid #f3f4f6',
+            background: isDark ? '#1e293b' : 'white', borderRadius: 12, padding: '16px 20px',
+            border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
           }}>
             <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 6px', fontWeight: 500 }}>
               {s.label}
             </p>
             <p style={{
-              fontSize: 26, fontWeight: 700, color: '#111827',
+              fontSize: 26, fontWeight: 700, color: isDark ? '#f1f5f9' : '#111827',
               margin: 0, letterSpacing: '-0.5px',
             }}>
               {s.value}
@@ -179,8 +181,8 @@ export default function GoalsPage() {
 
       {/* Toolbar */}
       <div style={{
-        background: 'white', borderRadius: 12, padding: '16px 20px',
-        border: '1px solid #f3f4f6', marginBottom: 16,
+        background: isDark ? '#1e293b' : 'white', borderRadius: 12, padding: '16px 20px',
+        border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, marginBottom: 16,
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
       }}>
@@ -189,7 +191,7 @@ export default function GoalsPage() {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '8px 12px', borderRadius: 8,
-            background: '#f9fafb', border: '1px solid #f3f4f6',
+            background: '#f9fafb', border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
           }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
@@ -201,7 +203,7 @@ export default function GoalsPage() {
               value={search} onChange={e => setSearch(e.target.value)}
               style={{
                 border: 'none', background: 'none', outline: 'none',
-                fontSize: 13, color: '#111827', width: 160,
+                fontSize: 13, color: isDark ? '#f1f5f9' : '#111827', width: 160,
               }}
             />
           </div>
@@ -244,12 +246,12 @@ export default function GoalsPage() {
       {/* Goals list */}
       {filteredGoals.length === 0 ? (
         <div style={{
-          background: 'white', borderRadius: 12, padding: '60px 20px',
-          border: '1px solid #f3f4f6', textAlign: 'center',
+          background: isDark ? '#1e293b' : 'white', borderRadius: 12, padding: '60px 20px',
+          border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, textAlign: 'center',
         }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12,
-            background: '#f9fafb', border: '1px solid #f3f4f6',
+            background: '#f9fafb', border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 12px',
           }}>
@@ -282,8 +284,8 @@ export default function GoalsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredGoals.map(goal => (
             <div key={goal.id} style={{
-              background: 'white', borderRadius: 12, padding: '20px',
-              border: '1px solid #f3f4f6', transition: 'box-shadow 0.15s',
+              background: isDark ? '#1e293b' : 'white', borderRadius: 12, padding: '20px',
+              border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, transition: 'box-shadow 0.15s',
             }}
               onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.06)'}
               onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'}
@@ -293,7 +295,7 @@ export default function GoalsPage() {
                   {/* Title row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                     <h3 style={{
-                      fontSize: 15, fontWeight: 600, color: '#111827',
+                      fontSize: 15, fontWeight: 600, color: isDark ? '#f1f5f9' : '#111827',
                       margin: 0, letterSpacing: '-0.2px',
                     }}>
                       {goal.title}
@@ -392,7 +394,7 @@ export default function GoalsPage() {
                   <button onClick={() => openEditModal(goal)}
                     style={{
                       width: 32, height: 32, borderRadius: 8,
-                      border: '1px solid #f3f4f6', background: 'white',
+                      border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, background: isDark ? '#1e293b' : 'white',
                       cursor: 'pointer', display: 'flex',
                       alignItems: 'center', justifyContent: 'center',
                       color: '#6b7280', transition: 'all 0.15s',
@@ -437,7 +439,7 @@ export default function GoalsPage() {
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}
         >
           <div style={{
-            background: 'white', borderRadius: 16, padding: 28,
+            background: isDark ? '#1e293b' : 'white', borderRadius: 16, padding: 28,
             width: '100%', maxWidth: 520,
             boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
             maxHeight: '90vh', overflowY: 'auto',
@@ -446,13 +448,13 @@ export default function GoalsPage() {
               display: 'flex', justifyContent: 'space-between',
               alignItems: 'center', marginBottom: 24,
             }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: 0 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: isDark ? '#f1f5f9' : '#111827', margin: 0 }}>
                 {editingGoal ? 'Edit Goal' : 'Add New Goal'}
               </h2>
               <button onClick={() => setShowModal(false)}
                 style={{
                   width: 32, height: 32, borderRadius: 8,
-                  border: '1px solid #f3f4f6', background: 'white',
+                  border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, background: isDark ? '#1e293b' : 'white',
                   cursor: 'pointer', display: 'flex',
                   alignItems: 'center', justifyContent: 'center',
                   color: '#9ca3af',
@@ -557,7 +559,7 @@ export default function GoalsPage() {
                 <button onClick={() => setShowModal(false)}
                   style={{
                     flex: 1, padding: '11px', borderRadius: 10,
-                    border: '1px solid #e5e7eb', background: 'white',
+                    border: '1px solid #e5e7eb', background: isDark ? '#1e293b' : 'white',
                     color: '#374151', fontWeight: 600, fontSize: 14,
                     cursor: 'pointer',
                   }}>

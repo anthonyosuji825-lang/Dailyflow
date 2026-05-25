@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (usernameOrEmail: string, password: string) => Promise<void>;
+  signup: (credentials: any) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -27,10 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = await authService.checkAuth();
       setUser(user);
     } catch {
-      // Not logged in — this is fine, just set null
-      setUser(null);
+      if (process.env.NODE_ENV === 'development') {
+        setUser(null);
+      } else {
+        setUser(null);
+      }
     } finally {
-      // Always stop loading regardless of outcome
       setLoading(false);
     }
   }
@@ -39,19 +42,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const response = await authService.login({ usernameOrEmail, password });
     if (response.data?.user) {
       setUser(response.data.user);
+    } else if (response.token) {
+      const user = await authService.checkAuth();
+      setUser(user);
+    }
+  }
+
+  async function signup(credentials: any) {
+    const response = await authService.signup(credentials);
+    if (response.data?.user) {
+      setUser(response.data.user);
+    } else if (response.token) {
+      const user = await authService.checkAuth();
+      setUser(user);
     }
   }
 
   async function logout() {
-  authService.logout();
-  setUser(null);
-}
+    authService.logout();
+    setUser(null);
+  }
 
   async function refreshUser() {
     await checkUser();
   }
 
-  // Don't render children until auth check is complete
   if (loading) {
     return (
       <div style={{
@@ -59,15 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       }}>
         <div style={{
-          width: '48px',
-          height: '48px',
+          width: '48px', height: '48px',
           border: '3px solid rgba(255,255,255,0.3)',
           borderTop: '3px solid white',
           borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite'
+          animation: 'spin 0.8s linear infinite',
         }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -75,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

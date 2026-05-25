@@ -35,7 +35,6 @@ export default function SignupPage() {
     if (!loading && user) router.replace('/dashboard');
   }, [user, loading, router]);
 
-  // Particle animation
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -49,14 +48,17 @@ export default function SignupPage() {
     window.addEventListener('resize', resize);
     const particles: {
       x: number; y: number; vx: number; vy: number;
-      radius: number; opacity: number;
-    }[] = Array.from({ length: 70 }, () => ({
+      radius: number; opacity: number; color: string;
+    }[] = Array.from({ length: 90 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      radius: Math.random() * 1.5 + 0.5,
-      opacity: Math.random() * 0.4 + 0.1,
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: (Math.random() - 0.5) * 0.6,
+      radius: Math.random() * 3 + 1,
+      opacity: Math.random() * 0.6 + 0.2,
+      color: ['#818cf8', '#a78bfa', '#c4b5fd', '#6366f1', '#ffffff'][
+        Math.floor(Math.random() * 5)
+      ],
     }));
     let animId: number;
     const draw = () => {
@@ -66,10 +68,10 @@ export default function SignupPage() {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 130) {
+          if (dist < 140) {
             ctx.beginPath();
-            ctx.strokeStyle = `rgba(139,92,246,${0.12 * (1 - dist / 130)})`;
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = `rgba(167,139,250,${0.25 * (1 - dist / 140)})`;
+            ctx.lineWidth = 0.8;
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
@@ -78,8 +80,10 @@ export default function SignupPage() {
         const p = particles[i];
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(139,92,246,${p.opacity})`;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.opacity;
         ctx.fill();
+        ctx.globalAlpha = 1;
         p.x += p.vx;
         p.y += p.vy;
         if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
@@ -158,16 +162,10 @@ export default function SignupPage() {
     if (!formData.terms) {
       setError('Please accept the terms of service'); return;
     }
-    if (usernameAvailable === false) {
-      setError('Username is already taken'); return;
-    }
-    if (emailAvailable === false) {
-      setError('Email is already registered'); return;
-    }
     setIsLoading(true);
     setError('');
     try {
-      const response = await authService.signup({
+      await authService.signup({
         fullName: formData.fullName,
         email: formData.email,
         username: formData.username,
@@ -175,11 +173,7 @@ export default function SignupPage() {
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       });
-      if (response.success) {
-        router.replace('/dashboard');
-      } else {
-        setError(response.message || 'Signup failed');
-      }
+      router.replace('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Signup failed. Please try again.');
     } finally {
@@ -194,47 +188,57 @@ export default function SignupPage() {
     borderRadius: 12, fontSize: 15, outline: 'none',
     background: '#f9fafb', color: '#111827',
     border: '2px solid #e5e7eb',
-    transition: 'border-color 0.2s',
     boxSizing: 'border-box' as const,
+    transition: 'border-color 0.2s',
+    fontFamily: 'inherit',
+  };
+
+  const labelStyle = {
+    display: 'block', fontSize: 13,
+    fontWeight: 600 as const, color: '#374151', marginBottom: 6,
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4"
-      style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <div style={{
+      minHeight: '100vh', position: 'relative',
+      overflow: 'hidden', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      padding: 16,
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    }}>
+      <canvas ref={canvasRef} style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+      }} />
 
-      <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }} />
-
-      <div className="relative w-full max-w-5xl py-8" style={{ zIndex: 1 }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1.1fr',
+      <div style={{
+        position: 'relative', zIndex: 1,
+        width: '100%', maxWidth: 960,
+        paddingTop: 16, paddingBottom: 16,
+      }}>
+        <div className="auth-card" style={{
           background: 'rgba(255,255,255,0.97)',
           backdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          overflow: 'hidden',
+          borderRadius: 24, overflow: 'hidden',
           boxShadow: '0 32px 80px rgba(0,0,0,0.25)',
           border: '1px solid rgba(255,255,255,0.2)',
-          minHeight: '600px',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.1fr)',
         }}>
 
           {/* LEFT PANEL */}
-          <div style={{
+          <div className="hide-mobile" style={{
             background: 'linear-gradient(145deg, #4338ca, #312e81)',
             padding: '48px 40px',
-            display: 'flex',
-            flexDirection: 'column',
+            display: 'flex', flexDirection: 'column',
             justifyContent: 'space-between',
-            position: 'relative',
-            overflow: 'hidden',
+            position: 'relative', overflow: 'hidden',
           }}>
             <div style={{
               position: 'absolute', inset: 0, opacity: 0.07,
               backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)',
               backgroundSize: '24px 24px',
             }} />
-
             <div style={{ position: 'relative', zIndex: 1 }}>
-              {/* Logo */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 14,
@@ -248,7 +252,6 @@ export default function SignupPage() {
                   <div style={{ color: '#a5b4fc', fontSize: 12 }}>Productivity Suite 2026</div>
                 </div>
               </div>
-
               <h2 style={{
                 color: 'white', fontSize: 30, fontWeight: 700,
                 lineHeight: 1.2, marginBottom: 16,
@@ -259,8 +262,6 @@ export default function SignupPage() {
               <p style={{ color: '#c7d2fe', fontSize: 14, lineHeight: 1.7, marginBottom: 36 }}>
                 Join thousands of people building better habits and achieving their goals with DailyFlow.
               </p>
-
-              {/* Stats */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {[
                   { value: '10K+', label: 'Active Users' },
@@ -279,23 +280,38 @@ export default function SignupPage() {
                 ))}
               </div>
             </div>
-
             <div style={{ position: 'relative', zIndex: 1, color: '#818cf8', fontSize: 13, marginTop: 32 }}>
               © 2026 DailyFlow
             </div>
           </div>
 
           {/* RIGHT PANEL */}
-          <div style={{
-            padding: '40px 44px',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center',
-            background: 'white', overflowY: 'auto',
+          <div className="auth-right-panel" style={{
+            padding: '40px 32px',
+            display: 'flex', flexDirection: 'column',
+            justifyContent: 'center', background: 'white',
+            overflowY: 'auto', maxHeight: '100vh',
           }}>
             <div style={{ maxWidth: 360, width: '100%', margin: '0 auto' }}>
 
-              <div style={{ marginBottom: 28 }}>
+              <div className="show-mobile-only" style={{
+                alignItems: 'center', gap: 10, marginBottom: 24,
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: 'linear-gradient(135deg, #6366f1, #d946ef)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 18, color: 'white', fontWeight: 700, flexShrink: 0,
+                }}>∿</div>
+                <div>
+                  <div style={{ color: '#111827', fontWeight: 700, fontSize: 18 }}>DailyFlow</div>
+                  <div style={{ color: '#9ca3af', fontSize: 11 }}>Productivity Suite 2026</div>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 24 }}>
                 <h2 style={{
-                  fontSize: 28, fontWeight: 700, color: '#111827',
+                  fontSize: 26, fontWeight: 700, color: '#111827',
                   letterSpacing: '-0.5px', marginBottom: 6,
                 }}>
                   Create Account
@@ -316,12 +332,8 @@ export default function SignupPage() {
               )}
 
               <form onSubmit={handleSubmit}>
-
-                {/* Full Name */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                    Full Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>Full Name <span style={{ color: '#ef4444' }}>*</span></label>
                   <input type="text" name="fullName" value={formData.fullName}
                     onChange={handleChange} placeholder="John Doe"
                     style={inputStyle}
@@ -329,62 +341,38 @@ export default function SignupPage() {
                     onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
                 </div>
 
-                {/* Email */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                    Email <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>Email <span style={{ color: '#ef4444' }}>*</span></label>
                   <div style={{ position: 'relative' }}>
                     <input type="email" name="email" value={formData.email}
                       onChange={handleChange} placeholder="you@example.com"
-                      style={{ ...inputStyle, paddingRight: 36 }}
+                      style={{ ...inputStyle, paddingRight: 40 }}
                       onFocus={e => e.target.style.borderColor = '#6366f1'}
                       onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
-                    {checkingEmail && (
-                      <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: 12 }}>...</span>
-                    )}
-                    {!checkingEmail && emailAvailable === true && (
-                      <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#10b981' }}>✓</span>
-                    )}
-                    {!checkingEmail && emailAvailable === false && (
-                      <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#ef4444' }}>✗</span>
-                    )}
+                    {checkingEmail && <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: 12 }}>...</span>}
+                    {!checkingEmail && emailAvailable === true && <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#10b981' }}>✓</span>}
+                    {!checkingEmail && emailAvailable === false && <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#ef4444' }}>✗</span>}
                   </div>
-                  {emailAvailable === false && (
-                    <p style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>Email already registered</p>
-                  )}
+                  {emailAvailable === false && <p style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>Email already registered</p>}
                 </div>
 
-                {/* Username & Phone */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                      Username <span style={{ color: '#ef4444' }}>*</span>
-                    </label>
+                    <label style={labelStyle}>Username <span style={{ color: '#ef4444' }}>*</span></label>
                     <div style={{ position: 'relative' }}>
                       <input type="text" name="username" value={formData.username}
                         onChange={handleChange} placeholder="johndoe"
-                        style={{ ...inputStyle, paddingRight: 30 }}
+                        style={{ ...inputStyle, paddingRight: 36 }}
                         onFocus={e => e.target.style.borderColor = '#6366f1'}
                         onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
-                      {checkingUsername && (
-                        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: 11 }}>...</span>
-                      )}
-                      {!checkingUsername && usernameAvailable === true && (
-                        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#10b981', fontSize: 13 }}>✓</span>
-                      )}
-                      {!checkingUsername && usernameAvailable === false && (
-                        <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#ef4444', fontSize: 13 }}>✗</span>
-                      )}
+                      {checkingUsername && <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: 11 }}>...</span>}
+                      {!checkingUsername && usernameAvailable === true && <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#10b981', fontSize: 13 }}>✓</span>}
+                      {!checkingUsername && usernameAvailable === false && <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#ef4444', fontSize: 13 }}>✗</span>}
                     </div>
-                    {usernameAvailable === false && (
-                      <p style={{ color: '#ef4444', fontSize: 11, marginTop: 3 }}>Already taken</p>
-                    )}
+                    {usernameAvailable === false && <p style={{ color: '#ef4444', fontSize: 11, marginTop: 3 }}>Already taken</p>}
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                      Phone
-                    </label>
+                    <label style={labelStyle}>Phone</label>
                     <input type="tel" name="phoneNumber" value={formData.phoneNumber}
                       onChange={handleChange} placeholder="08012345678"
                       style={inputStyle}
@@ -393,11 +381,8 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {/* Password */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                    Password <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={labelStyle}>Password <span style={{ color: '#ef4444' }}>*</span></label>
                   <div style={{ position: 'relative' }}>
                     <input type={showPassword ? 'text' : 'password'}
                       name="password" value={formData.password}
@@ -406,11 +391,7 @@ export default function SignupPage() {
                       onFocus={e => e.target.style.borderColor = '#6366f1'}
                       onBlur={e => e.target.style.borderColor = '#e5e7eb'} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: 'absolute', right: 12, top: '50%',
-                        transform: 'translateY(-50%)', background: 'none',
-                        border: 'none', cursor: 'pointer', fontSize: 16, color: '#9ca3af',
-                      }}>
+                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9ca3af' }}>
                       {showPassword ? '🙈' : '👁️'}
                     </button>
                   </div>
@@ -418,25 +399,16 @@ export default function SignupPage() {
                     <div style={{ marginTop: 8 }}>
                       <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
                         {[1, 2, 3, 4, 5].map(i => (
-                          <div key={i} style={{
-                            flex: 1, height: 3, borderRadius: 99,
-                            background: i <= passwordStrength ? strengthColor : '#e5e7eb',
-                            transition: 'background 0.3s',
-                          }} />
+                          <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, background: i <= passwordStrength ? strengthColor : '#e5e7eb', transition: 'background 0.3s' }} />
                         ))}
                       </div>
-                      <span style={{ fontSize: 12, color: strengthColor, fontWeight: 600 }}>
-                        {strengthLabel}
-                      </span>
+                      <span style={{ fontSize: 12, color: strengthColor, fontWeight: 600 }}>{strengthLabel}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Confirm Password */}
                 <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
-                    Confirm Password <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                  <label style={labelStyle}>Confirm Password <span style={{ color: '#ef4444' }}>*</span></label>
                   <div style={{ position: 'relative' }}>
                     <input type={showConfirm ? 'text' : 'password'}
                       name="confirmPassword" value={formData.confirmPassword}
@@ -454,21 +426,13 @@ export default function SignupPage() {
                           : '#e5e7eb';
                       }} />
                     <button type="button" onClick={() => setShowConfirm(!showConfirm)}
-                      style={{
-                        position: 'absolute', right: 12, top: '50%',
-                        transform: 'translateY(-50%)', background: 'none',
-                        border: 'none', cursor: 'pointer', fontSize: 16, color: '#9ca3af',
-                      }}>
+                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#9ca3af' }}>
                       {showConfirm ? '🙈' : '👁️'}
                     </button>
                   </div>
                 </div>
 
-                {/* Terms */}
-                <label style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 10,
-                  cursor: 'pointer', marginBottom: 20,
-                }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 20 }}>
                   <input type="checkbox" name="terms" checked={formData.terms}
                     onChange={handleChange}
                     style={{ width: 16, height: 16, marginTop: 2, accentColor: '#6366f1', flexShrink: 0 }} />
@@ -480,7 +444,6 @@ export default function SignupPage() {
                   </span>
                 </label>
 
-                {/* Submit */}
                 <button type="submit" disabled={isLoading}
                   style={{
                     width: '100%', padding: '14px', borderRadius: 12, border: 'none',
@@ -488,22 +451,17 @@ export default function SignupPage() {
                     background: isLoading ? '#a5b4fc' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
                     color: 'white', fontWeight: 700, fontSize: 15,
                     boxShadow: isLoading ? 'none' : '0 4px 16px rgba(99,102,241,0.4)',
-                    marginBottom: 14, display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', gap: 8,
+                    marginBottom: 14,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                   }}>
                   {isLoading ? (
                     <>
-                      <span style={{
-                        width: 16, height: 16, border: '2px solid white',
-                        borderTopColor: 'transparent', borderRadius: '50%',
-                        display: 'inline-block', animation: 'spin 0.7s linear infinite',
-                      }} />
+                      <span style={{ width: 16, height: 16, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
                       Creating account...
                     </>
                   ) : '✨ Create Account'}
                 </button>
 
-                {/* Divider */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                   <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
                   <span style={{ fontSize: 13, color: '#9ca3af' }}>Already have an account?</span>
@@ -524,10 +482,7 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <p style={{
-          textAlign: 'center', marginTop: 20, fontSize: 13,
-          color: 'rgba(255,255,255,0.5)',
-        }}>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
           © 2026 DailyFlow App. All rights reserved.
         </p>
       </div>
@@ -535,6 +490,15 @@ export default function SignupPage() {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         input::placeholder { color: #9ca3af; }
+        @media (max-width: 640px) {
+          .hide-mobile { display: none !important; }
+          .show-mobile-only { display: flex !important; }
+          .auth-card { grid-template-columns: 1fr !important; }
+          .auth-right-panel { padding: 28px 20px !important; max-height: none !important; }
+        }
+        @media (min-width: 641px) {
+          .show-mobile-only { display: none !important; }
+        }
       `}</style>
     </div>
   );

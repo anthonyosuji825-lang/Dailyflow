@@ -31,6 +31,7 @@ export interface SignupCredentials {
 export interface AuthResponse {
   success: boolean;
   message: string;
+  token?: string;
   data?: {
     user: User;
     token: string;

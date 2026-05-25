@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/context';
+import { useTheme } from '@/lib/theme';
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const [isMobile, setIsMobile] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -54,7 +56,7 @@ export default function ProfilePage() {
   const inputStyle = {
     width: '100%', padding: '10px 14px',
     borderRadius: 10, border: '1px solid #e5e7eb',
-    fontSize: 14, color: '#111827', background: '#f9fafb',
+    fontSize: 14, color: isDark ? '#f1f5f9' : '#111827', background: '#f9fafb',
     outline: 'none', boxSizing: 'border-box' as const,
     fontFamily: 'inherit',
     transition: 'border-color 0.15s',
@@ -103,8 +105,8 @@ export default function ProfilePage() {
 
       {/* Profile header card */}
       <div style={{
-        background: 'white', borderRadius: 16,
-        border: '1px solid #f3f4f6',
+        background: isDark ? '#1e293b' : 'white', borderRadius: 16,
+        border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
         marginBottom: 16, overflow: 'hidden',
       }}>
         {/* Banner */}
@@ -144,7 +146,7 @@ export default function ProfilePage() {
             <div>
               <h2 style={{
                 fontSize: isMobile ? 18 : 22, fontWeight: 700,
-                color: '#111827', margin: '0 0 4px',
+                color: isDark ? '#f1f5f9' : '#111827', margin: '0 0 4px',
                 letterSpacing: '-0.3px',
               }}>
                 {user?.fullName || 'User'}
@@ -188,13 +190,13 @@ export default function ProfilePage() {
       }}>
         {stats.map(s => (
           <div key={s.label} style={{
-            background: 'white', borderRadius: 12,
+            background: isDark ? '#1e293b' : 'white', borderRadius: 12,
             padding: isMobile ? '14px' : '16px 20px',
-            border: '1px solid #f3f4f6', textAlign: 'center',
+            border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, textAlign: 'center',
           }}>
             <p style={{
               fontSize: isMobile ? 22 : 26, fontWeight: 700,
-              color: '#111827', margin: '0 0 4px',
+              color: isDark ? '#f1f5f9' : '#111827', margin: '0 0 4px',
               letterSpacing: '-0.5px',
             }}>
               {s.value}
@@ -208,12 +210,12 @@ export default function ProfilePage() {
 
       {/* Profile form */}
       <div style={{
-        background: 'white', borderRadius: 16,
-        border: '1px solid #f3f4f6', padding: isMobile ? 16 : 28,
+        background: isDark ? '#1e293b' : 'white', borderRadius: 16,
+        border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, padding: isMobile ? 16 : 28,
         marginBottom: 16,
       }}>
         <h3 style={{
-          fontSize: 15, fontWeight: 700, color: '#111827',
+          fontSize: 15, fontWeight: 700, color: isDark ? '#f1f5f9' : '#111827',
           margin: '0 0 20px',
         }}>
           Personal Information
@@ -312,7 +314,7 @@ export default function ProfilePage() {
               <button onClick={() => setIsEditing(false)}
                 style={{
                   padding: '10px 20px', borderRadius: 8,
-                  border: '1px solid #e5e7eb', background: 'white',
+                  border: '1px solid #e5e7eb', background: isDark ? '#1e293b' : 'white',
                   color: '#374151', fontWeight: 600, fontSize: 14,
                   cursor: 'pointer',
                 }}>
@@ -349,12 +351,12 @@ export default function ProfilePage() {
 
       {/* Account info */}
       <div style={{
-        background: 'white', borderRadius: 16,
-        border: '1px solid #f3f4f6', padding: isMobile ? 16 : 28,
+        background: isDark ? '#1e293b' : 'white', borderRadius: 16,
+        border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, padding: isMobile ? 16 : 28,
         marginBottom: 16,
       }}>
         <h3 style={{
-          fontSize: 15, fontWeight: 700, color: '#111827',
+          fontSize: 15, fontWeight: 700, color: isDark ? '#f1f5f9' : '#111827',
           margin: '0 0 16px',
         }}>
           Account Information
@@ -383,7 +385,7 @@ export default function ProfilePage() {
               display: 'flex', justifyContent: 'space-between',
               alignItems: 'center', padding: '10px 14px',
               borderRadius: 10, background: '#f9fafb',
-              border: '1px solid #f3f4f6',
+              border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
             }}>
               <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>
                 {item.label}
@@ -401,7 +403,7 @@ export default function ProfilePage() {
 
       {/* Danger zone */}
       <div style={{
-        background: 'white', borderRadius: 16,
+        background: isDark ? '#1e293b' : 'white', borderRadius: 16,
         border: '1px solid #fecaca', padding: isMobile ? 16 : 28,
       }}>
         <h3 style={{
@@ -415,7 +417,7 @@ export default function ProfilePage() {
           justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
         }}>
           <div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', margin: '0 0 2px' }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#f1f5f9' : '#111827', margin: '0 0 2px' }}>
               Delete Account
             </p>
             <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>

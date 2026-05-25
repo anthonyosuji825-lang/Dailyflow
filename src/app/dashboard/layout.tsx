@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/context';
-import Sidebar from '../../components/dashboard/Sidebar';
-import MobileNav from '../../components/dashboard/MobileNav';
-import Header from '../../components/dashboard/Header';
+import { useTheme } from '@/lib/theme';
+import Sidebar from '@/components/dashboard/Sidebar';
+import MobileNav from '@/components/dashboard/MobileNav';
+import Header from '@/components/dashboard/Header';
 
 export default function DashboardLayout({
   children,
@@ -14,6 +15,7 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { isDark } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -24,12 +26,11 @@ export default function DashboardLayout({
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Temporarily disabled for development
-  // useEffect(() => {
-  //   if (!loading && !user) router.replace('/login');
-  // }, [user, loading, router]);
+  useEffect(() => {
+    if (!loading && !user) router.replace('/login');
+  }, [user, loading, router]);
 
-  // if (loading || !user) return null;
+  if (loading || !user) return null;
 
   const sidebarWidth = collapsed ? 60 : 240;
 
@@ -37,7 +38,8 @@ export default function DashboardLayout({
     <div style={{
       display: 'flex',
       minHeight: '100vh',
-      background: '#f9fafb',
+      background: isDark ? '#0f172a' : '#f9fafb',
+      transition: 'background 0.3s ease',
     }}>
       {!isMobile && <Sidebar onCollapse={setCollapsed} />}
       <div style={{
@@ -54,6 +56,8 @@ export default function DashboardLayout({
           flex: 1,
           padding: isMobile ? '16px' : '28px',
           overflowY: 'auto',
+          background: isDark ? '#0f172a' : '#f9fafb',
+          transition: 'background 0.3s ease',
         }}>
           {children}
         </main>

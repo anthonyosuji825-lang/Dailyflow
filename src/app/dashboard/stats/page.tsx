@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/lib/theme';
 
 type Tab = 'overview' | 'habits' | 'goals' | 'projects';
 
@@ -39,6 +40,7 @@ const tabs: { key: Tab; label: string }[] = [
 
 export default function StatsPage() {
   const [isMobile, setIsMobile] = useState(false);
+  const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const todayIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
 
@@ -55,8 +57,8 @@ export default function StatsPage() {
       {/* Tabs */}
       <div style={{
         display: 'flex', gap: 4, marginBottom: isMobile ? 16 : 24,
-        background: 'white', borderRadius: 12, padding: 6,
-        border: '1px solid #f3f4f6', overflowX: 'auto',
+        background: isDark ? '#1e293b' : 'white', borderRadius: 12, padding: 6,
+        border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`, overflowX: 'auto',
       }}>
         {tabs.map(tab => (
           <button key={tab.key}
@@ -86,9 +88,9 @@ export default function StatsPage() {
           }}>
             {monthlyStats.map(s => (
               <div key={s.label} style={{
-                background: 'white', borderRadius: 12,
+                background: isDark ? '#1e293b' : 'white', borderRadius: 12,
                 padding: isMobile ? '14px' : '20px',
-                border: '1px solid #f3f4f6',
+                border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
               }}>
                 <p style={{
                   fontSize: 12, color: '#9ca3af',
@@ -98,7 +100,7 @@ export default function StatsPage() {
                 </p>
                 <p style={{
                   fontSize: isMobile ? 24 : 28, fontWeight: 700,
-                  color: '#111827', margin: '0 0 12px',
+                  color: isDark ? '#f1f5f9' : '#111827', margin: '0 0 12px',
                   letterSpacing: '-0.5px',
                 }}>
                   {s.value}{s.unit}
@@ -119,16 +121,16 @@ export default function StatsPage() {
 
           {/* Weekly chart */}
           <div style={{
-            background: 'white', borderRadius: 12,
+            background: isDark ? '#1e293b' : 'white', borderRadius: 12,
             padding: isMobile ? '16px' : '24px',
-            border: '1px solid #f3f4f6',
+            border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
             marginBottom: isMobile ? 16 : 24,
           }}>
             <div style={{
               display: 'flex', justifyContent: 'space-between',
               alignItems: 'center', marginBottom: 20,
             }}>
-              <h3 style={{ fontSize: 14, fontWeight: 600, color: '#111827', margin: 0 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: isDark ? '#f1f5f9' : '#111827', margin: 0 }}>
                 Weekly Activity
               </h3>
               <span style={{ fontSize: 12, color: '#9ca3af' }}>This week</span>
@@ -201,13 +203,13 @@ export default function StatsPage() {
           }}>
             {/* Productivity score */}
             <div style={{
-              background: 'white', borderRadius: 12,
+              background: isDark ? '#1e293b' : 'white', borderRadius: 12,
               padding: isMobile ? '16px' : '24px',
-              border: '1px solid #f3f4f6',
+              border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
             }}>
               <h3 style={{
                 fontSize: 14, fontWeight: 600,
-                color: '#111827', margin: '0 0 16px',
+                color: isDark ? '#f1f5f9' : '#111827', margin: '0 0 16px',
               }}>
                 Productivity Score
               </h3>
@@ -231,7 +233,7 @@ export default function StatsPage() {
                   }}>
                     <div style={{
                       fontSize: 24, fontWeight: 700,
-                      color: '#111827', letterSpacing: '-0.5px',
+                      color: isDark ? '#f1f5f9' : '#111827', letterSpacing: '-0.5px',
                     }}>
                       0
                     </div>
@@ -249,13 +251,13 @@ export default function StatsPage() {
 
             {/* Streak summary */}
             <div style={{
-              background: 'white', borderRadius: 12,
+              background: isDark ? '#1e293b' : 'white', borderRadius: 12,
               padding: isMobile ? '16px' : '24px',
-              border: '1px solid #f3f4f6',
+              border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
             }}>
               <h3 style={{
                 fontSize: 14, fontWeight: 600,
-                color: '#111827', margin: '0 0 16px',
+                color: isDark ? '#f1f5f9' : '#111827', margin: '0 0 16px',
               }}>
                 Streak Summary
               </h3>
@@ -265,7 +267,7 @@ export default function StatsPage() {
                     display: 'flex', alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '10px 14px', borderRadius: 10,
-                    background: '#f9fafb', border: '1px solid #f3f4f6',
+                    background: isDark ? '#0f172a' : '#f9fafb', border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <span style={{ fontSize: 16 }}>{item.icon}</span>
@@ -286,13 +288,13 @@ export default function StatsPage() {
 
       {activeTab !== 'overview' && (
         <div style={{
-          background: 'white', borderRadius: 12,
-          padding: '60px 20px', border: '1px solid #f3f4f6',
+          background: isDark ? '#1e293b' : 'white', borderRadius: 12,
+          padding: '60px 20px', border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
           textAlign: 'center',
         }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12,
-            background: '#f9fafb', border: '1px solid #f3f4f6',
+            background: isDark ? '#0f172a' : '#f9fafb', border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 12px',
           }}>

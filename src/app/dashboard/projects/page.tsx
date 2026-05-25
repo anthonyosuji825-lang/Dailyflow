@@ -1,60 +1,55 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTheme } from '@/lib/theme';
 import { loadData, saveData } from '@/lib/store';
 
-type Status = 'planning' | 'inprogress' | 'completed' | 'paused';
-type Priority = 'high' | 'medium' | 'low';
+type Frequency = 'daily' | 'weekly' | 'monthly';
+type Category = 'health' | 'learning' | 'fitness' | 'mindfulness' | 'productivity' | 'other';
 
-interface Project {
+interface Habit {
   id: string;
   name: string;
   description: string;
-  category: string;
-  tech: string;
-  status: Status;
-  priority: Priority;
-  progress: number;
-  startDate: string;
-  deadline: string;
+  category: Category;
+  frequency: Frequency;
+  reminder: string;
+  streak: number;
+  completedDates: string[];
   createdAt: string;
 }
 
-const statusConfig = {
-  planning: { label: 'Planning', color: '#6366f1', bg: '#eef2ff' },
-  inprogress: { label: 'In Progress', color: '#f59e0b', bg: '#fffbeb' },
-  completed: { label: 'Completed', color: '#10b981', bg: '#ecfdf5' },
-  paused: { label: 'Paused', color: '#9ca3af', bg: '#f9fafb' },
+const categoryConfig = {
+  health: { label: 'Health', color: '#10b981', bg: '#ecfdf5' },
+  learning: { label: 'Learning', color: '#6366f1', bg: '#eef2ff' },
+  fitness: { label: 'Fitness', color: '#f59e0b', bg: '#fffbeb' },
+  mindfulness: { label: 'Mindfulness', color: '#8b5cf6', bg: '#f5f3ff' },
+  productivity: { label: 'Productivity', color: '#3b82f6', bg: '#eff6ff' },
+  other: { label: 'Other', color: '#6b7280', bg: '#f9fafb' },
 };
 
-const priorityConfig = {
-  high: { label: 'High', color: '#ef4444', bg: '#fef2f2' },
-  medium: { label: 'Medium', color: '#f59e0b', bg: '#fffbeb' },
-  low: { label: 'Low', color: '#10b981', bg: '#ecfdf5' },
+const frequencyConfig = {
+  daily: { label: 'Daily' },
+  weekly: { label: 'Weekly' },
+  monthly: { label: 'Monthly' },
 };
 
 const emptyForm = {
   name: '',
   description: '',
-  category: '',
-  tech: '',
-  status: 'planning' as Status,
-  priority: 'medium' as Priority,
-  progress: 0,
-  startDate: '',
-  deadline: '',
+  category: 'health' as Category,
+  frequency: 'daily' as Frequency,
+  reminder: '',
 };
 
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>(() => loadData().projects);
+export default function HabitsPage() {
+  const { isDark } = useTheme();
+  const [habits, setHabits] = useState<Habit[]>(() => loadData().habits);
   const [showModal, setShowModal] = useState(false);
-  useEffect(() => {
-  saveData({ projects });
-}, [projects]);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const [filter, setFilter] = useState<'all' | Status>('all');
   const [isMobile, setIsMobile] = useState(false);
+  const [filter, setFilter] = useState<'all' | Category>('all');
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -63,68 +58,84 @@ export default function ProjectsPage() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const filtered = projects.filter(p =>
-    filter === 'all' || p.status === filter
-  );
+  useEffect(() => {
+    saveData({ habits });
+  }, [habits]);
 
-  const stats = {
-    total: projects.length,
-    inprogress: projects.filter(p => p.status === 'inprogress').length,
-    completed: projects.filter(p => p.status === 'completed').length,
-    avgProgress: projects.length
-      ? Math.round(projects.reduce((a, p) => a + p.progress, 0) / projects.length)
-      : 0,
+  const today = new Date().toISOString().split('T')[0];
+
+  const isCompletedToday = (habit: Habit) => habit.completedDates.includes(today);
+
+  const toggleToday = (id: string) => {
+    setHabits(prev => prev.map(h => {
+      if (h.id !== id) return h;
+      const completed = h.completedDates.includes(today);
+      const newDates = completed
+        ? h.completedDates.filter(d => d !== today)
+        : [...h.completedDates, today];
+      let streak = 0;
+      const sorted = [...newDates].sort().reverse();
+      const todayDate = new Date(today);
+      for (let i = 0; i < sorted.length; i++) {
+        const d = new Date(sorted[i]);
+        const diff = Math.round((todayDate.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+        if (diff === i) streak++;
+        else break;
+      }
+      return { ...h, completedDates: newDates, streak };
+    }));
   };
 
-  const openAdd = () => {
-    setEditingProject(null);
-    setForm(emptyForm);
-    setShowModal(true);
-  };
+  const filtered = habits.filter(h => filter === 'all' || h.category === filter);
+  const completedToday = habits.filter(h => isCompletedToday(h)).length;
+  const totalActive = habits.length;
+  const bestStreak = habits.length ? Math.max(...habits.map(h => h.streak)) : 0;
+  const completionRate = totalActive ? Math.round((completedToday / totalActive) * 100) : 0;
 
-  const openEdit = (p: Project) => {
-    setEditingProject(p);
-    setForm({
-      name: p.name, description: p.description,
-      category: p.category, tech: p.tech,
-      status: p.status, priority: p.priority,
-      progress: p.progress, startDate: p.startDate,
-      deadline: p.deadline,
-    });
+  const openAdd = () => { setEditingHabit(null); setForm(emptyForm); setShowModal(true); };
+  const openEdit = (h: Habit) => {
+    setEditingHabit(h);
+    setForm({ name: h.name, description: h.description, category: h.category, frequency: h.frequency, reminder: h.reminder });
     setShowModal(true);
   };
 
   const handleSave = () => {
     if (!form.name.trim()) return;
-    if (editingProject) {
-      setProjects(prev => prev.map(p =>
-        p.id === editingProject.id ? { ...p, ...form } : p
-      ));
+    if (editingHabit) {
+      setHabits(prev => prev.map(h => h.id === editingHabit.id ? { ...h, ...form } : h));
     } else {
-      setProjects(prev => [...prev, {
-        id: Date.now().toString(),
-        ...form,
-        createdAt: new Date().toISOString(),
-      }]);
+      setHabits(prev => [...prev, { id: Date.now().toString(), ...form, streak: 0, completedDates: [], createdAt: new Date().toISOString() }]);
     }
     setShowModal(false);
   };
 
-  const handleDelete = (id: string) => {
-    setProjects(prev => prev.filter(p => p.id !== id));
+  const handleDelete = (id: string) => setHabits(prev => prev.filter(h => h.id !== id));
+
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
+  });
+
+  const card = {
+    background: isDark ? '#1e293b' : 'white',
+    border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
   };
 
   const inputStyle = {
     width: '100%', padding: '10px 14px',
-    borderRadius: 10, border: '1px solid #e5e7eb',
-    fontSize: 14, color: '#111827', background: '#f9fafb',
+    borderRadius: 10, border: `1px solid ${isDark ? '#334155' : '#e5e7eb'}`,
+    fontSize: 14, color: isDark ? '#f1f5f9' : '#111827',
+    background: isDark ? '#0f172a' : '#f9fafb',
     outline: 'none', boxSizing: 'border-box' as const,
     fontFamily: 'inherit',
   };
 
   const labelStyle = {
     display: 'block', fontSize: 13,
-    fontWeight: 600 as const, color: '#374151', marginBottom: 6,
+    fontWeight: 600 as const,
+    color: isDark ? '#94a3b8' : '#374151',
+    marginBottom: 6,
   };
 
   return (
@@ -134,27 +145,19 @@ export default function ProjectsPage() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)',
-        gap: isMobile ? 10 : 16,
-        marginBottom: isMobile ? 16 : 24,
+        gap: isMobile ? 10 : 16, marginBottom: isMobile ? 16 : 24,
       }}>
         {[
-          { label: 'Total Projects', value: stats.total, color: '#6366f1' },
-          { label: 'In Progress', value: stats.inprogress, color: '#f59e0b' },
-          { label: 'Completed', value: stats.completed, color: '#10b981' },
-          { label: 'Avg Progress', value: `${stats.avgProgress}%`, color: '#8b5cf6' },
+          { label: 'Total Habits', value: totalActive },
+          { label: 'Done Today', value: `${completedToday}/${totalActive}` },
+          { label: 'Best Streak', value: `${bestStreak}d` },
+          { label: "Today's Rate", value: `${completionRate}%` },
         ].map(s => (
-          <div key={s.label} style={{
-            background: 'white', borderRadius: 12,
-            padding: isMobile ? '14px' : '16px 20px',
-            border: '1px solid #f3f4f6',
-          }}>
-            <p style={{ fontSize: 12, color: '#9ca3af', margin: '0 0 6px', fontWeight: 500 }}>
+          <div key={s.label} style={{ ...card, borderRadius: 12, padding: isMobile ? '14px' : '16px 20px' }}>
+            <p style={{ fontSize: 12, color: isDark ? '#64748b' : '#9ca3af', margin: '0 0 6px', fontWeight: 500 }}>
               {s.label}
             </p>
-            <p style={{
-              fontSize: isMobile ? 22 : 26, fontWeight: 700,
-              color: '#111827', margin: 0, letterSpacing: '-0.5px',
-            }}>
+            <p style={{ fontSize: isMobile ? 22 : 26, fontWeight: 700, color: isDark ? '#f1f5f9' : '#111827', margin: 0, letterSpacing: '-0.5px' }}>
               {s.value}
             </p>
           </div>
@@ -163,27 +166,24 @@ export default function ProjectsPage() {
 
       {/* Toolbar */}
       <div style={{
-        background: 'white', borderRadius: 12,
+        ...card, borderRadius: 12,
         padding: isMobile ? '12px' : '16px 20px',
-        border: '1px solid #f3f4f6', marginBottom: 16,
+        marginBottom: 16,
         display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', gap: 10,
-        flexWrap: 'wrap',
+        justifyContent: 'space-between', gap: 10, flexWrap: 'wrap',
       }}>
-        <div style={{
-          display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1,
-        }}>
-          {(['all', 'planning', 'inprogress', 'completed', 'paused'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1 }}>
+          {(['all', ...Object.keys(categoryConfig)] as const).map(f => (
+            <button key={f} onClick={() => setFilter(f as any)}
               style={{
-                padding: isMobile ? '6px 10px' : '7px 14px',
-                borderRadius: 8, fontSize: isMobile ? 12 : 13,
+                padding: isMobile ? '5px 9px' : '6px 12px',
+                borderRadius: 8, fontSize: isMobile ? 11 : 12,
                 fontWeight: 500, cursor: 'pointer', border: 'none',
-                background: filter === f ? '#6366f1' : '#f9fafb',
-                color: filter === f ? 'white' : '#6b7280',
+                background: filter === f ? '#6366f1' : isDark ? '#0f172a' : '#f9fafb',
+                color: filter === f ? 'white' : isDark ? '#94a3b8' : '#6b7280',
                 transition: 'all 0.15s', whiteSpace: 'nowrap',
               }}>
-              {f === 'all' ? 'All' : statusConfig[f].label}
+              {f === 'all' ? 'All' : categoryConfig[f as Category].label}
             </button>
           ))}
         </div>
@@ -196,131 +196,137 @@ export default function ProjectsPage() {
             fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
             boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
           }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          {isMobile ? 'Add' : 'Add Project'}
+          {isMobile ? 'Add' : 'Add Habit'}
         </button>
       </div>
 
-      {/* Projects */}
+      {/* Habits list */}
       {filtered.length === 0 ? (
-        <div style={{
-          background: 'white', borderRadius: 12,
-          padding: '60px 20px', border: '1px solid #f3f4f6',
-          textAlign: 'center',
-        }}>
+        <div style={{ ...card, borderRadius: 12, padding: '60px 20px', textAlign: 'center' }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12,
-            background: '#f9fafb', border: '1px solid #f3f4f6',
+            background: isDark ? '#0f172a' : '#f9fafb',
+            border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 12px',
           }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-              stroke="#d1d5db" strokeWidth="2" strokeLinecap="round">
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isDark ? '#475569' : '#d1d5db'} strokeWidth="2" strokeLinecap="round">
+              <polyline points="9 11 12 14 22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
             </svg>
           </div>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#6b7280', margin: '0 0 4px' }}>
-            No projects yet
-          </p>
-          <p style={{ fontSize: 13, color: '#d1d5db', margin: '0 0 20px' }}>
-            Start tracking your first project
-          </p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: isDark ? '#94a3b8' : '#6b7280', margin: '0 0 4px' }}>No habits yet</p>
+          <p style={{ fontSize: 13, color: isDark ? '#475569' : '#d1d5db', margin: '0 0 20px' }}>Build consistency by tracking daily habits</p>
           <button onClick={openAdd}
-            style={{
-              padding: '8px 20px', borderRadius: 8,
-              background: '#6366f1', color: 'white',
-              border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 600,
-            }}>
-            Add Your First Project
+            style={{ padding: '8px 20px', borderRadius: 8, background: '#6366f1', color: 'white', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            Add Your First Habit
           </button>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-          gap: isMobile ? 10 : 16,
-        }}>
-          {filtered.map(project => (
-            <div key={project.id} style={{
-              background: 'white', borderRadius: 12, padding: '20px',
-              border: '1px solid #f3f4f6', transition: 'box-shadow 0.15s',
-            }}
-              onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.06)'}
-              onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'}
-            >
-              {/* Header */}
-              <div style={{
-                display: 'flex', justifyContent: 'space-between',
-                alignItems: 'flex-start', marginBottom: 12,
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtered.map(habit => {
+            const done = isCompletedToday(habit);
+            const cat = categoryConfig[habit.category];
+            return (
+              <div key={habit.id} style={{
+                background: isDark ? '#1e293b' : 'white',
+                borderRadius: 12, padding: '16px 20px',
+                border: `1px solid ${done ? (isDark ? '#065f46' : '#d1fae5') : (isDark ? '#334155' : '#f3f4f6')}`,
+                transition: 'all 0.15s',
+                display: 'flex', alignItems: 'center', gap: 16,
               }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{
-                    fontSize: 15, fontWeight: 700, color: '#111827',
-                    margin: '0 0 6px', letterSpacing: '-0.2px',
+                <button onClick={() => toggleToday(habit.id)}
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    border: `2px solid ${done ? '#10b981' : isDark ? '#334155' : '#e5e7eb'}`,
+                    background: done ? '#10b981' : 'transparent',
+                    cursor: 'pointer', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s',
                   }}>
-                    {project.name}
-                  </h3>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, padding: '2px 8px',
-                      borderRadius: 999,
-                      background: statusConfig[project.status].bg,
-                      color: statusConfig[project.status].color,
+                  {done && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  )}
+                </button>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <h3 style={{
+                      fontSize: 14, fontWeight: 600,
+                      color: done ? (isDark ? '#475569' : '#9ca3af') : (isDark ? '#f1f5f9' : '#111827'),
+                      margin: 0, letterSpacing: '-0.2px',
+                      textDecoration: done ? 'line-through' : 'none',
                     }}>
-                      {statusConfig[project.status].label}
+                      {habit.name}
+                    </h3>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 999, background: cat.bg, color: cat.color }}>
+                      {cat.label}
                     </span>
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, padding: '2px 8px',
-                      borderRadius: 999,
-                      background: priorityConfig[project.priority].bg,
-                      color: priorityConfig[project.priority].color,
-                    }}>
-                      {priorityConfig[project.priority].label}
+                    <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 999, background: isDark ? '#0f172a' : '#f3f4f6', color: isDark ? '#94a3b8' : '#6b7280' }}>
+                      {frequencyConfig[habit.frequency].label}
                     </span>
-                    {project.category && (
-                      <span style={{
-                        fontSize: 11, padding: '2px 8px',
-                        borderRadius: 999, background: '#f3f4f6',
-                        color: '#6b7280',
-                      }}>
-                        {project.category}
-                      </span>
-                    )}
+                  </div>
+
+                  {habit.description && !isMobile && (
+                    <p style={{ fontSize: 12, color: isDark ? '#64748b' : '#9ca3af', margin: '0 0 8px' }}>
+                      {habit.description}
+                    </p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    {last7Days.map((date, i) => {
+                      const completed = habit.completedDates.includes(date);
+                      const isToday = date === today;
+                      return (
+                        <div key={date} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                          {!isMobile && (
+                            <span style={{ fontSize: 9, color: isDark ? '#475569' : '#d1d5db', textTransform: 'uppercase' }}>
+                              {['S','M','T','W','T','F','S'][new Date(date).getDay()]}
+                            </span>
+                          )}
+                          <div style={{
+                            width: isMobile ? 20 : 22, height: isMobile ? 20 : 22, borderRadius: 6,
+                            background: completed ? '#10b981' : isToday ? (isDark ? '#1e3a5f' : '#eef2ff') : (isDark ? '#0f172a' : '#f9fafb'),
+                            border: isToday ? '1.5px solid #6366f1' : `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
+                            transition: 'all 0.15s',
+                          }} />
+                        </div>
+                      );
+                    })}
+                    <span style={{ fontSize: 11, color: isDark ? '#64748b' : '#9ca3af', marginLeft: 6, whiteSpace: 'nowrap' }}>
+                      🔥 {habit.streak}d
+                    </span>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
-                  <button onClick={() => openEdit(project)}
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button onClick={() => openEdit(habit)}
                     style={{
                       width: 30, height: 30, borderRadius: 8,
-                      border: '1px solid #f3f4f6', background: 'white',
-                      cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      color: '#6b7280',
+                      border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
+                      background: isDark ? '#0f172a' : 'white',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: isDark ? '#94a3b8' : '#6b7280',
                     }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                     </svg>
                   </button>
-                  <button onClick={() => handleDelete(project.id)}
+                  <button onClick={() => handleDelete(habit.id)}
                     style={{
                       width: 30, height: 30, borderRadius: 8,
                       border: '1px solid #fecaca', background: '#fef2f2',
-                      cursor: 'pointer', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       color: '#ef4444',
                     }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                       <polyline points="3 6 5 6 21 6"/>
                       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                       <path d="M10 11v6M14 11v6"/>
@@ -328,95 +334,8 @@ export default function ProjectsPage() {
                   </button>
                 </div>
               </div>
-
-              {/* Description */}
-              {project.description && (
-                <p style={{
-                  fontSize: 13, color: '#6b7280',
-                  margin: '0 0 12px', lineHeight: 1.5,
-                }}>
-                  {project.description}
-                </p>
-              )}
-
-              {/* Tech stack */}
-              {project.tech && (
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {project.tech.split(',').map((t, i) => (
-                      <span key={i} style={{
-                        fontSize: 11, padding: '2px 8px', borderRadius: 6,
-                        background: '#eef2ff', color: '#6366f1', fontWeight: 500,
-                      }}>
-                        {t.trim()}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Progress */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{
-                  display: 'flex', justifyContent: 'space-between',
-                  marginBottom: 6,
-                }}>
-                  <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 500 }}>
-                    Progress
-                  </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#6366f1' }}>
-                    {project.progress}%
-                  </span>
-                </div>
-                <div style={{
-                  height: 6, borderRadius: 999,
-                  background: '#f3f4f6', overflow: 'hidden',
-                }}>
-                  <div style={{
-                    height: '100%', borderRadius: 999,
-                    width: `${project.progress}%`,
-                    background: project.progress === 100
-                      ? '#10b981'
-                      : 'linear-gradient(90deg, #6366f1, #a855f7)',
-                    transition: 'width 0.3s',
-                  }} />
-                </div>
-              </div>
-
-              {/* Dates */}
-              {(project.startDate || project.deadline) && (
-                <div style={{
-                  display: 'flex', gap: 16,
-                  paddingTop: 12, borderTop: '1px solid #f9fafb',
-                }}>
-                  {project.startDate && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                        stroke="#9ca3af" strokeWidth="2" strokeLinecap="round">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
-                      </svg>
-                      <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                        Started {new Date(project.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                  )}
-                  {project.deadline && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
-                        stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                      </svg>
-                      <span style={{ fontSize: 11, color: '#ef4444' }}>
-                        Due {new Date(project.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -424,36 +343,32 @@ export default function ProjectsPage() {
       {showModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 16,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
         }}
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}
         >
           <div style={{
-            background: 'white', borderRadius: 16,
-            padding: isMobile ? 20 : 28,
-            width: '100%', maxWidth: 520,
-            boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
+            background: isDark ? '#1e293b' : 'white',
+            borderRadius: 16, padding: isMobile ? 20 : 28,
+            width: '100%', maxWidth: 480,
+            boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
             maxHeight: '90vh', overflowY: 'auto',
+            border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
           }}>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between',
-              alignItems: 'center', marginBottom: 20,
-            }}>
-              <h2 style={{ fontSize: 17, fontWeight: 700, color: '#111827', margin: 0 }}>
-                {editingProject ? 'Edit Project' : 'Add New Project'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, color: isDark ? '#f1f5f9' : '#111827', margin: 0 }}>
+                {editingHabit ? 'Edit Habit' : 'Add New Habit'}
               </h2>
               <button onClick={() => setShowModal(false)}
                 style={{
                   width: 30, height: 30, borderRadius: 8,
-                  border: '1px solid #f3f4f6', background: 'white',
-                  cursor: 'pointer', display: 'flex',
-                  alignItems: 'center', justifyContent: 'center',
-                  color: '#9ca3af',
+                  border: `1px solid ${isDark ? '#334155' : '#f3f4f6'}`,
+                  background: isDark ? '#0f172a' : 'white',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: isDark ? '#94a3b8' : '#9ca3af',
                 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <line x1="18" y1="6" x2="6" y2="18"/>
                   <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -461,123 +376,69 @@ export default function ProjectsPage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {/* Name */}
               <div>
-                <label style={labelStyle}>Project Name <span style={{ color: '#ef4444' }}>*</span></label>
+                <label style={labelStyle}>Habit Name <span style={{ color: '#ef4444' }}>*</span></label>
                 <input type="text" value={form.name}
                   onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                  placeholder="e.g. DailyFlow App"
+                  placeholder="e.g. Morning Exercise"
                   style={inputStyle}
                   onFocus={e => e.target.style.borderColor = '#6366f1'}
-                  onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                  onBlur={e => e.target.style.borderColor = isDark ? '#334155' : '#e5e7eb'}
                 />
               </div>
 
-              {/* Description */}
               <div>
                 <label style={labelStyle}>Description</label>
-                <textarea value={form.description}
+                <input type="text" value={form.description}
                   onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                  placeholder="What is this project about?"
-                  rows={2}
-                  style={{ ...inputStyle, resize: 'vertical' }}
+                  placeholder="Short description (optional)"
+                  style={inputStyle}
                   onFocus={e => e.target.style.borderColor = '#6366f1'}
-                  onBlur={e => e.target.style.borderColor = '#e5e7eb'}
+                  onBlur={e => e.target.style.borderColor = isDark ? '#334155' : '#e5e7eb'}
                 />
               </div>
 
-              {/* Category & Tech */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={labelStyle}>Category</label>
-                  <input type="text" value={form.category}
-                    onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-                    placeholder="e.g. Web Dev"
-                    style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = '#6366f1'}
-                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Tech Stack</label>
-                  <input type="text" value={form.tech}
-                    onChange={e => setForm(p => ({ ...p, tech: e.target.value }))}
-                    placeholder="e.g. React, Node"
-                    style={inputStyle}
-                    onFocus={e => e.target.style.borderColor = '#6366f1'}
-                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-                  />
-                </div>
-              </div>
-
-              {/* Status & Priority */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={labelStyle}>Status</label>
-                  <select value={form.status}
-                    onChange={e => setForm(p => ({ ...p, status: e.target.value as Status }))}
+                  <select value={form.category}
+                    onChange={e => setForm(p => ({ ...p, category: e.target.value as Category }))}
                     style={{ ...inputStyle, cursor: 'pointer' }}>
-                    {Object.entries(statusConfig).map(([k, v]) => (
+                    {Object.entries(categoryConfig).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Priority</label>
-                  <select value={form.priority}
-                    onChange={e => setForm(p => ({ ...p, priority: e.target.value as Priority }))}
+                  <label style={labelStyle}>Frequency</label>
+                  <select value={form.frequency}
+                    onChange={e => setForm(p => ({ ...p, frequency: e.target.value as Frequency }))}
                     style={{ ...inputStyle, cursor: 'pointer' }}>
-                    {Object.entries(priorityConfig).map(([k, v]) => (
+                    {Object.entries(frequencyConfig).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Dates */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={labelStyle}>Start Date</label>
-                  <input type="date" value={form.startDate}
-                    onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))}
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                    onFocus={e => e.target.style.borderColor = '#6366f1'}
-                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-                  />
-                </div>
-                <div>
-                  <label style={labelStyle}>Deadline</label>
-                  <input type="date" value={form.deadline}
-                    onChange={e => setForm(p => ({ ...p, deadline: e.target.value }))}
-                    style={{ ...inputStyle, cursor: 'pointer' }}
-                    onFocus={e => e.target.style.borderColor = '#6366f1'}
-                    onBlur={e => e.target.style.borderColor = '#e5e7eb'}
-                  />
-                </div>
-              </div>
-
-              {/* Progress */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <label style={{ ...labelStyle, margin: 0 }}>Progress</label>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#6366f1' }}>
-                    {form.progress}%
-                  </span>
-                </div>
-                <input type="range" min={0} max={100} value={form.progress}
-                  onChange={e => setForm(p => ({ ...p, progress: Number(e.target.value) }))}
-                  style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
+                <label style={labelStyle}>Reminder Time</label>
+                <input type="time" value={form.reminder}
+                  onChange={e => setForm(p => ({ ...p, reminder: e.target.value }))}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                  onFocus={e => e.target.style.borderColor = '#6366f1'}
+                  onBlur={e => e.target.style.borderColor = isDark ? '#334155' : '#e5e7eb'}
                 />
               </div>
 
-              {/* Buttons */}
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <button onClick={() => setShowModal(false)}
                   style={{
                     flex: 1, padding: '11px', borderRadius: 10,
-                    border: '1px solid #e5e7eb', background: 'white',
-                    color: '#374151', fontWeight: 600, fontSize: 14,
-                    cursor: 'pointer',
+                    border: `1px solid ${isDark ? '#334155' : '#e5e7eb'}`,
+                    background: isDark ? '#0f172a' : 'white',
+                    color: isDark ? '#94a3b8' : '#374151',
+                    fontWeight: 600, fontSize: 14, cursor: 'pointer',
                   }}>
                   Cancel
                 </button>
@@ -585,11 +446,10 @@ export default function ProjectsPage() {
                   style={{
                     flex: 1, padding: '11px', borderRadius: 10,
                     border: 'none', background: '#6366f1',
-                    color: 'white', fontWeight: 600, fontSize: 14,
-                    cursor: 'pointer',
+                    color: 'white', fontWeight: 600, fontSize: 14, cursor: 'pointer',
                     boxShadow: '0 2px 8px rgba(99,102,241,0.3)',
                   }}>
-                  {editingProject ? 'Save Changes' : 'Add Project'}
+                  {editingHabit ? 'Save Changes' : 'Add Habit'}
                 </button>
               </div>
             </div>
